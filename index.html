@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeetCode 75 · 30天通关日志</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0b0e14;
+    --bg-panel:#11151d;
+    --bg-raised:#171c27;
+    --line:#232938;
+    --ink:#dde3ee;
+    --ink-dim:#6f7a8e;
+    --ink-faint:#454e60;
+    --mint:#6ee7b7;
+    --mint-dim:#234a3c;
+    --amber:#f5b461;
+    --amber-dim:#4a3a22;
+    --coral:#f0716b;
+    --violet:#a99bff;
+    --mono:'JetBrains Mono', monospace;
+    --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg-void); color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased;}
+  body{
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(110,231,183,0.05), transparent 40%),
+      radial-gradient(circle at 88% 92%, rgba(169,155,255,0.05), transparent 40%);
+    padding-bottom:60px;
+  }
+  a{color:var(--violet); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  button{font-family:var(--sans); cursor:pointer;}
+  ::selection{background:var(--mint-dim); color:var(--mint);}
+
+  /* ===== Header ===== */
+  .topbar{
+    max-width:880px; margin:0 auto; padding:38px 24px 18px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--ink-faint); display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .eyebrow .dot{width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint);}
+  h1{
+    font-family:var(--mono); font-weight:700; font-size:clamp(26px,4.5vw,38px);
+    letter-spacing:-0.01em; line-height:1.15; color:#f3f5fa;
+  }
+  h1 .accent{color:var(--mint);}
+  .sub{
+    font-size:14.5px; color:var(--ink-dim); margin-top:10px; max-width:520px; line-height:1.6;
+  }
+
+  /* ===== Stats strip ===== */
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:10px;
+    margin-top:26px; overflow:hidden;
+  }
+  .stat{background:var(--bg-panel); padding:16px 14px;}
+  .stat-num{font-family:var(--mono); font-size:24px; font-weight:700; color:var(--mint); line-height:1;}
+  .stat-num.amber{color:var(--amber);}
+  .stat-num.violet{color:var(--violet);}
+  .stat-label{font-size:11.5px; color:var(--ink-dim); margin-top:6px; letter-spacing:0.02em;}
+
+  /* ===== Continue card ===== */
+  .continue-wrap{max-width:880px; margin:22px auto 0; padding:0 24px;}
+  .continue{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    background:linear-gradient(135deg, rgba(110,231,183,0.08), rgba(169,155,255,0.05));
+    border:1px solid rgba(110,231,183,0.25); border-radius:12px; padding:16px 20px;
+  }
+  .continue-text{font-size:13.5px; color:var(--ink-dim);}
+  .continue-text b{color:var(--ink); font-family:var(--mono);}
+  .continue-btn{
+    background:var(--mint); color:#06241a; border:none; border-radius:8px;
+    padding:9px 16px; font-size:13px; font-weight:700; font-family:var(--mono);
+    white-space:nowrap;
+  }
+  .continue-btn:hover{filter:brightness(1.08);}
+  .all-done{display:none;}
+
+  /* ===== Timeline ===== */
+  .timeline-wrap{max-width:880px; margin:34px auto 0; padding:0 24px;}
+  .phase-label{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--ink-faint); margin:30px 0 12px; padding-left:46px;
+  }
+  .phase-label:first-child{margin-top:0;}
+  .timeline{position:relative;}
+  .timeline::before{
+    content:''; position:absolute; left:21px; top:6px; bottom:6px; width:1px;
+    background:linear-gradient(to bottom, var(--line), var(--line) 95%, transparent);
+  }
+
+  .day-row{position:relative; padding-left:46px; margin-bottom:8px;}
+  .day-node{
+    position:absolute; left:0; top:14px; width:43px; height:43px;
+    display:flex; align-items:center; justify-content:center;
+    z-index:2;
+  }
+  .day-node-inner{
+    width:30px; height:30px; border-radius:8px; background:var(--bg-raised);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--ink-dim);
+    transition:all .2s;
+  }
+  .day-row.complete .day-node-inner{background:var(--mint-dim); border-color:var(--mint); color:var(--mint);}
+  .day-row.partial .day-node-inner{border-color:var(--amber); color:var(--amber);}
+  .day-row.review-type .day-node-inner{border-style:dashed;}
+
+  .day-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    overflow:hidden; transition:border-color .15s;
+  }
+  .day-row.open .day-card{border-color:var(--ink-faint);}
+
+  .day-head{
+    display:flex; align-items:center; gap:12px; padding:13px 16px;
+    cursor:pointer; user-select:none;
+  }
+  .day-head:hover{background:rgba(255,255,255,0.015);}
+  .day-title{flex:1; min-width:0;}
+  .day-title-main{font-size:14.5px; font-weight:600; color:var(--ink);}
+  .day-title-sub{font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); margin-top:2px;}
+  .cat-chip{
+    font-family:var(--mono); font-size:10.5px; padding:3px 7px; border-radius:5px;
+    border:1px solid currentColor; opacity:0.85; white-space:nowrap;
+  }
+  .progress-mini{width:54px; flex-shrink:0;}
+  .progress-track{height:4px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--mint); border-radius:3px; transition:width .25s;}
+  .progress-fill.partial{background:var(--amber);}
+  .progress-text{font-family:var(--mono); font-size:10px; color:var(--ink-faint); margin-top:4px; text-align:right;}
+  .chevron{color:var(--ink-faint); transition:transform .2s; flex-shrink:0;}
+  .day-row.open .chevron{transform:rotate(90deg); color:var(--ink-dim);}
+
+  .day-body{display:none; padding:4px 16px 18px 16px; border-top:1px solid var(--line);}
+  .day-row.open .day-body{display:block;}
+
+  .section-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--ink-faint); margin:16px 0 8px;
+  }
+  .section-label.review{color:var(--amber);}
+
+  .task{
+    display:flex; align-items:flex-start; gap:10px; padding:8px 6px; border-radius:6px;
+  }
+  .task:hover{background:rgba(255,255,255,0.02);}
+  .checkbox{
+    width:18px; height:18px; border-radius:5px; border:1.5px solid var(--ink-faint);
+    flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all .15s; background:transparent;
+  }
+  .checkbox.checked{background:var(--mint); border-color:var(--mint);}
+  .checkbox svg{width:11px; height:11px; opacity:0; transition:opacity .1s;}
+  .checkbox.checked svg{opacity:1;}
+  .task-main{flex:1; min-width:0;}
+  .task-name-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .task-link{font-size:13.5px; font-weight:500; color:var(--ink);}
+  .task-link:hover{color:var(--violet); text-decoration:none;}
+  .task.done .task-link{color:var(--ink-faint); text-decoration:line-through;}
+  .diff{font-family:var(--mono); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;}
+  .diff.Easy{color:var(--mint); background:var(--mint-dim);}
+  .diff.Medium{color:var(--amber); background:var(--amber-dim);}
+  .diff.Hard{color:var(--coral); background:#4a2424;}
+  .premium-tag{font-size:10.5px; color:var(--ink-faint); font-style:italic;}
+  .flag-btn{
+    background:none; border:none; color:var(--ink-faint); font-size:14px; padding:2px 6px;
+    flex-shrink:0; border-radius:4px; line-height:1;
+  }
+  .flag-btn.flagged{color:var(--coral);}
+  .flag-btn:hover{background:rgba(255,255,255,0.06);}
+
+  .review-empty{font-size:13px; color:var(--ink-faint); padding:6px; font-style:italic;}
+  .review-note{font-size:12px; color:var(--ink-dim); padding:6px; line-height:1.5;}
+
+  .task-note{font-size:12.5px; color:var(--ink-dim); line-height:1.55; padding:6px 6px 2px;}
+
+  /* ===== Footer ===== */
+  .footer{max-width:880px; margin:40px auto 0; padding:0 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+  .footer-text{font-size:12px; color:var(--ink-faint); line-height:1.6;}
+  .reset-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-faint);
+    border-radius:7px; padding:7px 13px; font-size:12px; font-family:var(--mono);
+  }
+  .reset-btn:hover{border-color:var(--coral); color:var(--coral);}
+
+  @media (max-width:560px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .continue{flex-direction:column; align-items:flex-start;}
+    .day-title-sub{display:none;}
+  }
+
+  /* ===== Sync bar ===== */
+  .sync-wrap{max-width:880px; margin:14px auto 0; padding:0 24px;}
+  .sync-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; font-size:12.5px;
+  }
+  .sync-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex-shrink:0;}
+  .sync-dot.online{background:var(--mint); box-shadow:0 0 6px var(--mint);}
+  .sync-dot.offline{background:var(--coral);}
+  .sync-dot.syncing{background:var(--amber); animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1} 50%{opacity:.3}}
+  .sync-status{color:var(--ink-dim); white-space:nowrap;}
+  .sync-code-display{
+    font-family:var(--mono); font-weight:700; color:var(--violet); letter-spacing:0.02em;
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:6px; padding:3px 8px;
+    font-size:11px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .sync-spacer{flex:1;}
+  .sync-action{
+    background:none; border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:6px; padding:5px 10px; font-size:12px; font-family:var(--mono);
+  }
+  .sync-action:hover{border-color:var(--violet); color:var(--violet);}
+  .sync-input{
+    background:var(--bg-raised); border:1px solid var(--line); color:var(--ink);
+    border-radius:6px; padding:5px 8px; font-family:var(--mono); font-size:12px; width:190px;
+  }
+  .sync-input:focus{outline:none; border-color:var(--violet);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="eyebrow"><span class="dot"></span>PERSONAL TRAINING LOG</div>
+  <h1>NeetCode<span class="accent">75</span> · 30天通关日志</h1>
+  <p class="sub">75道高频面试题，拆解到25天学习 + 5天复盘冲刺。每天新题配合间隔复习（前一天 / 第3天 / 第7天回顾），打卡即保存进度，刷新页面不丢失。</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" id="stat-solved">0/75</div>
+      <div class="stat-label">题目已完成</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num amber" id="stat-day">Day 0/30</div>
+      <div class="stat-label">计划进度</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num violet" id="stat-streak">0 天</div>
+      <div class="stat-label">连续打卡</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-review" style="color:var(--coral)">0</div>
+      <div class="stat-label">标记为不熟</div>
+    </div>
+  </div>
+</div>
+
+<div class="sync-wrap">
+  <div class="sync-bar">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="sync-status" id="sync-status">连接中…</span>
+    <span class="sync-code-display" id="sync-code-display">------</span>
+    <button class="sync-action" id="sync-copy-btn">复制同步码</button>
+    <div class="sync-spacer"></div>
+    <input class="sync-input" id="sync-input" placeholder="输入同步码连接其它设备" maxlength="40">
+    <button class="sync-action" id="sync-connect-btn">连接此码</button>
+  </div>
+</div>
+
+<div class="continue-wrap">
+  <div class="continue" id="continue-card">
+    <div class="continue-text">建议从这里继续 → <b id="continue-day-label">Day 1</b></div>
+    <button class="continue-btn" id="continue-btn">跳转并展开</button>
+  </div>
+  <div class="continue all-done" id="all-done-card" style="display:none;">
+    <div class="continue-text" style="color:var(--mint)">🎉 全部完成！可以去刷 NeetCode 150 了。</div>
+  </div>
+</div>
+
+<div class="timeline-wrap">
+  <div id="timeline" class="timeline"></div>
+</div>
+
+<div class="footer">
+  <div class="footer-text">进度保存在本设备浏览器中（不依赖账号）。<br>点击题目右侧 ⚑ 可标记"不熟"，方便复盘周针对性重做。</div>
+  <button class="reset-btn" id="reset-btn">重置全部进度</button>
+</div>
+
+<script>
+const CATEGORY_COLOR = {
+  "数组与哈希":"#6ee7b7","双指针":"#a99bff","滑动窗口":"#f5b461","栈":"#7dd3fc",
+  "二分查找":"#f0716b","链表":"#c4b5fd","树":"#6ee7b7","堆/优先队列":"#f5b461",
+  "回溯":"#a99bff","字典树":"#7dd3fc","图":"#f0716b","高级图论":"#fca5a5",
+  "一维DP":"#6ee7b7","二维DP":"#34d399","贪心":"#f5b461","区间":"#a99bff",
+  "数学与几何":"#7dd3fc","位运算":"#c4b5fd","综合复盘":"#9ca3af","模拟面试":"#f0716b"
+};
+
+const LC = "https://leetcode.com/problems/";
+function p(name, slug, diff, premium){ return {name, url: LC+slug+"/", diff, premium: !!premium}; }
+
+// 25天学习计划，3题/天，按 NeetCode 推荐顺序覆盖全部 Blind75 / NeetCode75 75题
+const PLAN = [
+  {day:1, cat:"数组与哈希", items:[p("Contains Duplicate","contains-duplicate","Easy"),p("Valid Anagram","valid-anagram","Easy"),p("Two Sum","two-sum","Easy")]},
+  {day:2, cat:"数组与哈希", items:[p("Group Anagrams","group-anagrams","Medium"),p("Top K Frequent Elements","top-k-frequent-elements","Medium"),p("Product of Array Except Self","product-of-array-except-self","Medium")]},
+  {day:3, cat:"数组与哈希", items:[p("Encode and Decode Strings","encode-and-decode-strings","Medium",true),p("Longest Consecutive Sequence","longest-consecutive-sequence","Medium"),p("Valid Palindrome","valid-palindrome","Easy")]},
+  {day:4, cat:"双指针", items:[p("3Sum","3sum","Medium"),p("Container With Most Water","container-with-most-water","Medium"),p("Best Time to Buy and Sell Stock","best-time-to-buy-and-sell-stock","Easy")]},
+  {day:5, cat:"滑动窗口", items:[p("Longest Substring Without Repeating Characters","longest-substring-without-repeating-characters","Medium"),p("Longest Repeating Character Replacement","longest-repeating-character-replacement","Medium"),p("Minimum Window Substring","minimum-window-substring","Hard")]},
+  {day:6, cat:"栈", items:[p("Valid Parentheses","valid-parentheses","Easy"),p("Find Minimum in Rotated Sorted Array","find-minimum-in-rotated-sorted-array","Medium"),p("Search in Rotated Sorted Array","search-in-rotated-sorted-array","Medium")]},
+  {day:7, cat:"链表", items:[p("Reverse Linked List","reverse-linked-list","Easy"),p("Linked List Cycle","linked-list-cycle","Easy"),p("Merge Two Sorted Lists","merge-two-sorted-lists","Easy")]},
+  {day:8, cat:"链表", items:[p("Merge K Sorted Lists","merge-k-sorted-lists","Hard"),p("Remove Nth Node From End of List","remove-nth-node-from-end-of-list","Medium"),p("Reorder List","reorder-list","Medium")]},
+  {day:9, cat:"树", items:[p("Maximum Depth of Binary Tree","maximum-depth-of-binary-tree","Easy"),p("Same Tree","same-tree","Easy"),p("Invert Binary Tree","invert-binary-tree","Easy")]},
+  {day:10, cat:"树", items:[p("Binary Tree Maximum Path Sum","binary-tree-maximum-path-sum","Hard"),p("Binary Tree Level Order Traversal","binary-tree-level-order-traversal","Medium"),p("Serialize and Deserialize Binary Tree","serialize-and-deserialize-binary-tree","Hard")]},
+  {day:11, cat:"树", items:[p("Subtree of Another Tree","subtree-of-another-tree","Easy"),p("Construct Binary Tree from Preorder and Inorder Traversal","construct-binary-tree-from-preorder-and-inorder-traversal","Medium"),p("Validate Binary Search Tree","validate-binary-search-tree","Medium")]},
+  {day:12, cat:"树", items:[p("Kth Smallest Element in a BST","kth-smallest-element-in-a-bst","Medium"),p("Lowest Common Ancestor of a BST","lowest-common-ancestor-of-a-binary-search-tree","Medium"),p("Find Median from Data Stream","find-median-from-data-stream","Hard")]},
+  {day:13, cat:"回溯", items:[p("Combination Sum","combination-sum","Medium"),p("Word Search","word-search","Medium"),p("Implement Trie (Prefix Tree)","implement-trie-prefix-tree","Medium")]},
+  {day:14, cat:"字典树", items:[p("Design Add and Search Words Data Structure","design-add-and-search-words-data-structure","Medium"),p("Word Search II","word-search-ii","Hard"),p("Number of Islands","number-of-islands","Medium")]},
+  {day:15, cat:"图", items:[p("Clone Graph","clone-graph","Medium"),p("Pacific Atlantic Water Flow","pacific-atlantic-water-flow","Medium"),p("Course Schedule","course-schedule","Medium")]},
+  {day:16, cat:"高级图论", items:[p("Number of Connected Components in an Undirected Graph","number-of-connected-components-in-an-undirected-graph","Medium",true),p("Graph Valid Tree","graph-valid-tree","Medium",true),p("Alien Dictionary","alien-dictionary","Hard",true)]},
+  {day:17, cat:"一维DP", items:[p("Climbing Stairs","climbing-stairs","Easy"),p("House Robber","house-robber","Medium"),p("House Robber II","house-robber-ii","Medium")]},
+  {day:18, cat:"一维DP", items:[p("Longest Palindromic Substring","longest-palindromic-substring","Medium"),p("Palindromic Substrings","palindromic-substrings","Medium"),p("Decode Ways","decode-ways","Medium")]},
+  {day:19, cat:"一维DP", items:[p("Coin Change","coin-change","Medium"),p("Maximum Product Subarray","maximum-product-subarray","Medium"),p("Word Break","word-break","Medium")]},
+  {day:20, cat:"二维DP", items:[p("Longest Increasing Subsequence","longest-increasing-subsequence","Medium"),p("Unique Paths","unique-paths","Medium"),p("Longest Common Subsequence","longest-common-subsequence","Medium")]},
+  {day:21, cat:"贪心", items:[p("Maximum Subarray","maximum-subarray","Medium"),p("Jump Game","jump-game","Medium"),p("Insert Interval","insert-interval","Medium")]},
+  {day:22, cat:"区间", items:[p("Merge Intervals","merge-intervals","Medium"),p("Non-overlapping Intervals","non-overlapping-intervals","Medium"),p("Rotate Image","rotate-image","Medium")]},
+  {day:23, cat:"区间", items:[p("Meeting Rooms","meeting-rooms","Easy",true),p("Meeting Rooms II","meeting-rooms-ii","Medium",true),p("Spiral Matrix","spiral-matrix","Medium")]},
+  {day:24, cat:"数学与几何", items:[p("Set Matrix Zeroes","set-matrix-zeroes","Medium"),p("Sum of Two Integers","sum-of-two-integers","Medium"),p("Number of 1 Bits","number-of-1-bits","Easy")]},
+  {day:25, cat:"位运算", items:[p("Counting Bits","counting-bits","Easy"),p("Missing Number","missing-number","Easy"),p("Reverse Bits","reverse-bits","Easy")]},
+];
+
+// 26-30 复盘冲刺周：不挂题目，给具体任务
+const REVIEW_DAYS = [
+  {day:26, cat:"综合复盘", title:"复盘：数组 / 链表 / 树", tasks:[
+    "把所有标记 ⚑「不熟」的数组、链表、树类题目重做一遍，不看之前的代码",
+    "任选 2 道树的递归题，口述一遍递归三步：终止条件 / 单层逻辑 / 返回值",
+    "回顾哈希表 + 双指针 + 滑动窗口三种解法的适用场景区别"
+  ]},
+  {day:27, cat:"综合复盘", title:"复盘：图 / 回溯 / DP", tasks:[
+    "重做 1 道 BFS、1 道 DFS 的图题，确保能默写邻接表构建过程",
+    "把 1 维 DP 的 5 道题状态转移方程抄一遍，对比相似题型的差异",
+    "重做标记「不熟」的回溯 / DP 题目"
+  ]},
+  {day:28, cat:"综合复盘", title:"复盘：贪心 / 区间 / 位运算 + 弱项清扫", tasks:[
+    "快速过一遍区间类题目的核心套路（排序 + 扫描）",
+    "把这周三天里仍标记「不熟」的题目集中重做，直到能 15 分钟内独立写完",
+    "整理一份你自己的「易错点」清单（变量作用域、Java API、边界条件等）"
+  ]},
+  {day:29, cat:"模拟面试", title:"模拟面试 Day 1（限时）", tasks:[
+    "计时 45 分钟，盲做 2 道 Medium + 1 道 Hard（不看任何提示）",
+    "做完后对照复杂度要求自查时间/空间复杂度",
+    "记录卡住的地方，标记为「不熟」"
+  ]},
+  {day:30, cat:"模拟面试", title:"模拟面试 Day 2 + 总结", tasks:[
+    "计时 45 分钟，再做 2 道 Medium + 1 道 Hard（尽量覆盖弱项分类）",
+    "回顾这 30 天，列出你最熟练的 3 个分类和最薄弱的 3 个分类",
+    "为后续刷 NeetCode 150 制定下一阶段计划"
+  ]},
+];
+
+const TOTAL_DAYS = 30;
+const STORAGE_KEY = "neetcode75-progress-v1";
+let state = { completion:{}, flags:{}, startDate: null };
+
+function dayKey(d){ return "d"+d; }
+
+/* ===================== 同步层（jsonblob.com，免注册匿名存储） =====================
+   流程：第一台设备首次打开 -> 自动创建一个云端存档，生成6位同步码并显示。
+   另一台设备打开同一个网址 -> 在输入框填入相同同步码 -> 连接，两边数据合并为一份。
+   之后每次打勾会自动 PUT 到云端；定时 + 切回页面时会 GET 拉取最新数据。
+   网络失败时自动降级为"仅本机保存"，不会报错卡死。
+====================================================================== */
+const JB_BASE = "https://jsonblob.com/api/jsonBlob";
+const CODE_KEY = "neetcode75-sync-code";
+let blobId = localStorage.getItem(CODE_KEY) || "";
+let lastLocalEditAt = 0;
+let pollTimer = null;
+
+function setSyncStatus(mode, text){
+  const dot = document.getElementById('sync-dot');
+  const status = document.getElementById('sync-status');
+  if(!dot || !status) return;
+  dot.className = 'sync-dot ' + mode; // online | offline | syncing
+  status.textContent = text;
+}
+function setSyncCodeDisplay(code){
+  const el = document.getElementById('sync-code-display');
+  if(el) el.textContent = code || '------';
+}
+
+function saveLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+let saveTimer=null;
+function saveState(){
+  lastLocalEditAt = Date.now();
+  saveLocal();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ pushToCloud(); }, 500);
+}
+
+async function pushToCloud(){
+  if(!blobId){ return; }
+  setSyncStatus('syncing','保存中…');
+  try{
+    const res = await fetch(JB_BASE + "/" + blobId, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(state)
+    });
+    if(!res.ok) throw new Error('PUT failed: '+res.status);
+    setSyncStatus('online','已同步');
+  }catch(e){
+    console.warn('同步保存失败，已保留在本机：', e);
+    setSyncStatus('offline','保存失败（已保留在本机，会重试）');
+  }
+}
+
+async function pullFromCloud(showStatus){
+  if(!blobId) return false;
+  if(showStatus) setSyncStatus('syncing','正在读取…');
+  try{
+    const res = await fetch(JB_BASE + "/" + blobId, {headers:{'Accept':'application/json'}});
+    if(res.status===404){ setSyncStatus('offline','同步码无效或已过期'); return false; }
+    if(!res.ok) throw new Error('GET failed: '+res.status);
+    const remote = await res.json();
+    if(remote && typeof remote==='object' && remote.completion){
+      state = remote;
+      saveLocal();
+      captureOpen(); renderTimeline(); restoreOpen(); renderStats();
+    }
+    setSyncStatus('online','已同步');
+    return true;
+  }catch(e){
+    console.warn('拉取云端数据失败：', e);
+    setSyncStatus('offline','离线（仅本机保存，将自动重试）');
+    return false;
+  }
+}
+
+async function createCloudBlob(){
+  setSyncStatus('syncing','正在创建云端存档…');
+  try{
+    const res = await fetch(JB_BASE, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify(state)
+    });
+    if(!res.ok) throw new Error('POST failed: '+res.status);
+    const loc = res.headers.get('Location') || res.headers.get('location') || '';
+    const id = loc.split('/').filter(Boolean).pop();
+    if(!id) throw new Error('未能从响应中取得同步码');
+    blobId = id;
+    localStorage.setItem(CODE_KEY, blobId);
+    setSyncCodeDisplay(blobId);
+    setSyncStatus('online','已同步');
+    return true;
+  }catch(e){
+    console.warn('创建云端存档失败，降级为仅本机保存：', e);
+    setSyncStatus('offline','离线（仅本机保存，刷新页面可重试）');
+    return false;
+  }
+}
+
+async function switchSyncCode(newCode){
+  newCode = (newCode||'').trim();
+  if(!newCode) return;
+  const prev = blobId;
+  blobId = newCode;
+  setSyncCodeDisplay(blobId);
+  setSyncStatus('syncing','正在连接…');
+  try{
+    const res = await fetch(JB_BASE + "/" + blobId, {headers:{'Accept':'application/json'}});
+    if(res.status===404){
+      alert('没找到这个同步码对应的数据，请确认输入是否正确（注意大小写）。');
+      blobId = prev; setSyncCodeDisplay(blobId);
+      return;
+    }
+    if(!res.ok) throw new Error('GET failed: '+res.status);
+    const remote = await res.json();
+    if(remote && typeof remote==='object' && remote.completion){
+      state = remote;
+    }
+    localStorage.setItem(CODE_KEY, blobId);
+    saveLocal();
+    captureOpen(); renderTimeline(); restoreOpen(); renderStats();
+    setSyncStatus('online','已同步');
+    startPolling();
+  }catch(e){
+    console.warn('连接同步码失败：', e);
+    setSyncStatus('offline','连接失败，请检查网络后重试');
+    blobId = prev; setSyncCodeDisplay(blobId);
+  }
+}
+
+function startPolling(){
+  clearInterval(pollTimer);
+  pollTimer = setInterval(()=>{
+    // 刚编辑过的几秒内不拉取，避免覆盖还没推上去的本地改动
+    if(Date.now() - lastLocalEditAt < 4000) return;
+    if(document.visibilityState === 'visible') pullFromCloud(false);
+  }, 20000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible' && Date.now()-lastLocalEditAt>4000) pullFromCloud(false);
+  });
+}
+
+async function loadState(cb){
+  // 先用本机缓存渲染一次，不让用户等网络
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ try{ state = JSON.parse(raw); }catch(e){} }
+  }catch(e){}
+  if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
+  cb();
+
+  setSyncCodeDisplay(blobId);
+
+  if(blobId){
+    const ok = await pullFromCloud(true);
+    if(ok) startPolling();
+  } else {
+    await createCloudBlob();
+    if(blobId) startPolling();
+  }
+}
+
+document.getElementById('sync-copy-btn').addEventListener('click', ()=>{
+  if(!blobId) return;
+  navigator.clipboard.writeText(blobId).then(()=>{
+    const btn = document.getElementById('sync-copy-btn');
+    const old = btn.textContent; btn.textContent = '已复制 ✓';
+    setTimeout(()=>btn.textContent=old, 1200);
+  }).catch(()=>{});
+});
+document.getElementById('sync-connect-btn').addEventListener('click', ()=>{
+  const val = document.getElementById('sync-input').value;
+  if(val && val.trim()){ switchSyncCode(val); document.getElementById('sync-input').value=''; }
+});
+document.getElementById('sync-input').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ document.getElementById('sync-connect-btn').click(); }
+});
+
+function ensureDay(d){
+  if(!state.completion[dayKey(d)]) state.completion[dayKey(d)] = {new:{}, review:{}, tasks:{}};
+  return state.completion[dayKey(d)];
+}
+
+// 间隔复习：从 day-1 / day-3 / day-7 抽取题目（去重，最多4个）
+function getReviewItems(day){
+  const lookbacks = [1,3,7];
+  const seen = new Set();
+  const out = [];
+  lookbacks.forEach(lb=>{
+    const srcDay = day - lb;
+    const plan = PLAN.find(x=>x.day===srcDay);
+    if(plan){
+      plan.items.forEach(it=>{
+        if(!seen.has(it.name) && out.length<4){ seen.add(it.name); out.push({...it, fromDay:srcDay}); }
+      });
+    }
+  });
+  return out;
+}
+
+function dayProgress(day){
+  const plan = PLAN.find(x=>x.day===day);
+  const rd = REVIEW_DAYS.find(x=>x.day===day);
+  const rec = ensureDay(day);
+  if(plan){
+    const reviewItems = getReviewItems(day);
+    const totalNew = plan.items.length;
+    const doneNew = plan.items.filter((it,i)=>rec.new[i]).length;
+    const totalRev = reviewItems.length;
+    const doneRev = reviewItems.filter(it=>rec.review[it.name]).length;
+    return {done: doneNew+doneRev, total: totalNew+totalRev, newOnly: doneNew===totalNew && totalNew>0};
+  } else if(rd){
+    const total = rd.tasks.length;
+    const done = rd.tasks.filter((t,i)=>rec.tasks[i]).length;
+    return {done, total, newOnly: done===total};
+  }
+  return {done:0,total:0,newOnly:false};
+}
+
+function isDayComplete(day){
+  const pr = dayProgress(day);
+  return pr.total>0 && pr.done===pr.total;
+}
+
+function renderStats(){
+  let solved=0;
+  PLAN.forEach(d=>{ const rec=ensureDay(d.day); solved += d.items.filter((it,i)=>rec.new[i]).length; });
+  document.getElementById('stat-solved').textContent = solved+"/75";
+
+  let lastComplete = 0;
+  for(let d=1; d<=TOTAL_DAYS; d++){ if(isDayComplete(d)) lastComplete=d; else break; }
+  document.getElementById('stat-streak').textContent = lastComplete+" 天";
+
+  let highestTouched = 0;
+  for(let d=1; d<=TOTAL_DAYS; d++){ const pr=dayProgress(d); if(pr.done>0) highestTouched=d; }
+  document.getElementById('stat-day').textContent = "Day "+highestTouched+"/30";
+
+  let flagCount = Object.keys(state.flags||{}).filter(k=>state.flags[k]).length;
+  document.getElementById('stat-review').textContent = flagCount;
+
+  let nextDay = TOTAL_DAYS+1;
+  for(let d=1; d<=TOTAL_DAYS; d++){ if(!isDayComplete(d)){ nextDay=d; break; } }
+  if(nextDay>TOTAL_DAYS){
+    document.getElementById('continue-card').style.display='none';
+    document.getElementById('all-done-card').style.display='flex';
+  } else {
+    document.getElementById('continue-card').style.display='flex';
+    document.getElementById('all-done-card').style.display='none';
+    document.getElementById('continue-day-label').textContent = "Day "+nextDay;
+    document.getElementById('continue-btn').onclick = ()=>jumpToDay(nextDay);
+  }
+}
+
+function jumpToDay(d){
+  const el = document.getElementById('row-'+d);
+  if(!el) return;
+  el.classList.add('open');
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function checkboxSVG(){
+  return '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#06241a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function renderTimeline(){
+  const root = document.getElementById('timeline');
+  root.innerHTML = '';
+
+  const phase1 = document.createElement('div');
+  phase1.className = 'phase-label';
+  phase1.textContent = '第一阶段 · 新题学习（Day 1–25）';
+  root.appendChild(phase1);
+
+  PLAN.forEach(d=>{
+    root.appendChild(renderPlanDay(d));
+  });
+
+  const phase2 = document.createElement('div');
+  phase2.className = 'phase-label';
+  phase2.textContent = '第二阶段 · 复盘冲刺周（Day 26–30）';
+  root.appendChild(phase2);
+
+  REVIEW_DAYS.forEach(d=>{
+    root.appendChild(renderReviewDay(d));
+  });
+}
+
+function renderPlanDay(d){
+  const row = document.createElement('div');
+  row.className = 'day-row';
+  row.id = 'row-'+d.day;
+  const color = CATEGORY_COLOR[d.cat] || '#6ee7b7';
+  const reviewItems = getReviewItems(d.day);
+  const rec = ensureDay(d.day);
+  const pr = dayProgress(d.day);
+
+  row.innerHTML = `
+    <div class="day-node"><div class="day-node-inner">${String(d.day).padStart(2,'0')}</div></div>
+    <div class="day-card">
+      <div class="day-head">
+        <div class="day-title">
+          <div class="day-title-main">Day ${d.day} · ${d.items.map(it=>it.name).slice(0,1)[0]} 等 ${d.items.length} 题</div>
+          <div class="day-title-sub">新题 ${d.items.length} 道${reviewItems.length? ' · 复习 '+reviewItems.length+' 道':''}</div>
+        </div>
+        <span class="cat-chip" style="color:${color}">${d.cat}</span>
+        <div class="progress-mini">
+          <div class="progress-track"><div class="progress-fill ${pr.done<pr.total?'partial':''}" style="width:${pr.total? (pr.done/pr.total*100):0}%"></div></div>
+          <div class="progress-text">${pr.done}/${pr.total}</div>
+        </div>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="section-label">新题 · New</div>
+        <div class="task-list-new"></div>
+        ${reviewItems.length? `<div class="section-label review">间隔复习 · Spaced Review</div><div class="task-list-review"></div>` : ''}
+      </div>
+    </div>
+  `;
+
+  const newList = row.querySelector('.task-list-new');
+  d.items.forEach((it, i)=>{
+    newList.appendChild(renderTask(it, !!rec.new[i], ()=>{
+      rec.new[i] = !rec.new[i];
+      saveAndRerender();
+    }, d.day, 'new-'+i));
+  });
+
+  if(reviewItems.length){
+    const revList = row.querySelector('.task-list-review');
+    reviewItems.forEach(it=>{
+      const wrap = document.createElement('div');
+      wrap.appendChild(renderTask(it, !!rec.review[it.name], ()=>{
+        rec.review[it.name] = !rec.review[it.name];
+        saveAndRerender();
+      }, d.day, 'rev-'+it.name, true));
+      revList.appendChild(wrap);
+    });
+  }
+
+  row.querySelector('.day-head').addEventListener('click', ()=>{
+    row.classList.toggle('open');
+  });
+
+  updateRowClass(row, pr);
+  return row;
+}
+
+function renderTask(it, done, onToggle, day, keyId, isReview){
+  const wrap = document.createElement('div');
+  wrap.className = 'task' + (done?' done':'');
+  const flagKey = it.name;
+  const flagged = !!(state.flags && state.flags[flagKey]);
+
+  wrap.innerHTML = `
+    <div class="checkbox ${done?'checked':''}">${checkboxSVG()}</div>
+    <div class="task-main">
+      <div class="task-name-row">
+        <a class="task-link" href="${it.url}" target="_blank" rel="noopener">${it.name}</a>
+        <span class="diff ${it.diff}">${it.diff}</span>
+        ${it.premium? '<span class="premium-tag">需 LeetCode 会员，可用 NeetCode.io 上的版本替代</span>':''}
+        ${isReview? `<span class="premium-tag" style="color:var(--amber)">来自 Day ${it.fromDay}</span>`:''}
+      </div>
+    </div>
+    <button class="flag-btn ${flagged?'flagged':''}" title="标记为不熟">⚑</button>
+  `;
+  wrap.querySelector('.checkbox').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    onToggle();
+  });
+  wrap.querySelector('.flag-btn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    state.flags = state.flags || {};
+    state.flags[flagKey] = !state.flags[flagKey];
+    saveAndRerender();
+  });
+  return wrap;
+}
+
+function renderReviewDay(d){
+  const row = document.createElement('div');
+  row.className = 'day-row review-type';
+  row.id = 'row-'+d.day;
+  const color = CATEGORY_COLOR[d.cat] || '#9ca3af';
+  const rec = ensureDay(d.day);
+  const pr = dayProgress(d.day);
+
+  row.innerHTML = `
+    <div class="day-node"><div class="day-node-inner">${String(d.day).padStart(2,'0')}</div></div>
+    <div class="day-card">
+      <div class="day-head">
+        <div class="day-title">
+          <div class="day-title-main">Day ${d.day} · ${d.title}</div>
+          <div class="day-title-sub">${d.tasks.length} 项任务</div>
+        </div>
+        <span class="cat-chip" style="color:${color}">${d.cat}</span>
+        <div class="progress-mini">
+          <div class="progress-track"><div class="progress-fill ${pr.done<pr.total?'partial':''}" style="width:${pr.total? (pr.done/pr.total*100):0}%"></div></div>
+          <div class="progress-text">${pr.done}/${pr.total}</div>
+        </div>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="section-label">任务清单</div>
+        <div class="task-list-tasks"></div>
+      </div>
+    </div>
+  `;
+
+  const list = row.querySelector('.task-list-tasks');
+  d.tasks.forEach((t, i)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'task' + (rec.tasks[i]?' done':'');
+    wrap.innerHTML = `
+      <div class="checkbox ${rec.tasks[i]?'checked':''}">${checkboxSVG()}</div>
+      <div class="task-main"><div class="task-note" style="padding:0; color:${rec.tasks[i]?'var(--ink-faint)':'var(--ink)'}; font-size:13.5px;">${t}</div></div>
+    `;
+    wrap.querySelector('.checkbox').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      rec.tasks[i] = !rec.tasks[i];
+      saveAndRerender();
+    });
+    list.appendChild(wrap);
+  });
+
+  row.querySelector('.day-head').addEventListener('click', ()=>{
+    row.classList.toggle('open');
+  });
+
+  updateRowClass(row, pr);
+  return row;
+}
+
+function updateRowClass(row, pr){
+  row.classList.remove('complete','partial');
+  if(pr.total>0 && pr.done===pr.total) row.classList.add('complete');
+  else if(pr.done>0) row.classList.add('partial');
+}
+
+let openDays = new Set();
+function captureOpen(){
+  openDays = new Set();
+  document.querySelectorAll('.day-row.open').forEach(el=>openDays.add(el.id));
+}
+function restoreOpen(){
+  openDays.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
+}
+
+function saveAndRerender(){
+  saveState();
+  captureOpen();
+  renderTimeline();
+  restoreOpen();
+  renderStats();
+}
+
+document.getElementById('reset-btn').addEventListener('click', ()=>{
+  if(confirm('确定要重置全部打卡进度吗？此操作无法撤销。')){
+    state = {completion:{}, flags:{}, startDate: new Date().toISOString().slice(0,10)};
+    saveAndRerender();
+  }
+});
+
+loadState(()=>{
+  renderTimeline();
+  renderStats();
+});
+</script>
+</body>
+</html>
