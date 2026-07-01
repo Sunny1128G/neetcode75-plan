@@ -198,36 +198,6 @@
     .continue{flex-direction:column; align-items:flex-start;}
     .day-title-sub{display:none;}
   }
-
-  /* ===== Sync bar ===== */
-  .sync-wrap{max-width:880px; margin:14px auto 0; padding:0 24px;}
-  .sync-bar{
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
-    padding:10px 14px; font-size:12.5px;
-  }
-  .sync-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex-shrink:0;}
-  .sync-dot.online{background:var(--mint); box-shadow:0 0 6px var(--mint);}
-  .sync-dot.offline{background:var(--coral);}
-  .sync-dot.syncing{background:var(--amber); animation:pulse 1s infinite;}
-  @keyframes pulse{0%,100%{opacity:1} 50%{opacity:.3}}
-  .sync-status{color:var(--ink-dim); white-space:nowrap;}
-  .sync-code-display{
-    font-family:var(--mono); font-weight:700; color:var(--violet); letter-spacing:0.02em;
-    background:var(--bg-raised); border:1px solid var(--line); border-radius:6px; padding:3px 8px;
-    font-size:11px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .sync-spacer{flex:1;}
-  .sync-action{
-    background:none; border:1px solid var(--line); color:var(--ink-dim);
-    border-radius:6px; padding:5px 10px; font-size:12px; font-family:var(--mono);
-  }
-  .sync-action:hover{border-color:var(--violet); color:var(--violet);}
-  .sync-input{
-    background:var(--bg-raised); border:1px solid var(--line); color:var(--ink);
-    border-radius:6px; padding:5px 8px; font-family:var(--mono); font-size:12px; width:190px;
-  }
-  .sync-input:focus{outline:none; border-color:var(--violet);}
 </style>
 </head>
 <body>
@@ -254,18 +224,6 @@
       <div class="stat-num" id="stat-review" style="color:var(--coral)">0</div>
       <div class="stat-label">标记为不熟</div>
     </div>
-  </div>
-</div>
-
-<div class="sync-wrap">
-  <div class="sync-bar">
-    <span class="sync-dot" id="sync-dot"></span>
-    <span class="sync-status" id="sync-status">连接中…</span>
-    <span class="sync-code-display" id="sync-code-display">------</span>
-    <button class="sync-action" id="sync-copy-btn">复制同步码</button>
-    <div class="sync-spacer"></div>
-    <input class="sync-input" id="sync-input" placeholder="输入同步码连接其它设备" maxlength="40">
-    <button class="sync-action" id="sync-connect-btn">连接此码</button>
   </div>
 </div>
 
@@ -364,183 +322,24 @@ let state = { completion:{}, flags:{}, startDate: null };
 
 function dayKey(d){ return "d"+d; }
 
-/* ===================== 同步层（jsonblob.com，免注册匿名存储） =====================
-   流程：第一台设备首次打开 -> 自动创建一个云端存档，生成6位同步码并显示。
-   另一台设备打开同一个网址 -> 在输入框填入相同同步码 -> 连接，两边数据合并为一份。
-   之后每次打勾会自动 PUT 到云端；定时 + 切回页面时会 GET 拉取最新数据。
-   网络失败时自动降级为"仅本机保存"，不会报错卡死。
-====================================================================== */
-const JB_BASE = "https://jsonblob.com/api/jsonBlob";
-const CODE_KEY = "neetcode75-sync-code";
-let blobId = localStorage.getItem(CODE_KEY) || "";
-let lastLocalEditAt = 0;
-let pollTimer = null;
-
-function setSyncStatus(mode, text){
-  const dot = document.getElementById('sync-dot');
-  const status = document.getElementById('sync-status');
-  if(!dot || !status) return;
-  dot.className = 'sync-dot ' + mode; // online | offline | syncing
-  status.textContent = text;
+function loadState(cb){
+  if(window.storage && window.storage.get){
+    window.storage.get(STORAGE_KEY).then(res=>{
+      if(res && res.value){ try{ state = JSON.parse(res.value); }catch(e){} }
+      if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
+      cb();
+    }).catch(()=>{ if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); } cb(); });
+  } else { cb(); }
 }
-function setSyncCodeDisplay(code){
-  const el = document.getElementById('sync-code-display');
-  if(el) el.textContent = code || '------';
-}
-
-function saveLocal(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-}
-
 let saveTimer=null;
 function saveState(){
-  lastLocalEditAt = Date.now();
-  saveLocal();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{ pushToCloud(); }, 500);
-}
-
-async function pushToCloud(){
-  if(!blobId){ return; }
-  setSyncStatus('syncing','保存中…');
-  try{
-    const res = await fetch(JB_BASE + "/" + blobId, {
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(state)
-    });
-    if(!res.ok) throw new Error('PUT failed: '+res.status);
-    setSyncStatus('online','已同步');
-  }catch(e){
-    console.warn('同步保存失败，已保留在本机：', e);
-    setSyncStatus('offline','保存失败（已保留在本机，会重试）');
-  }
-}
-
-async function pullFromCloud(showStatus){
-  if(!blobId) return false;
-  if(showStatus) setSyncStatus('syncing','正在读取…');
-  try{
-    const res = await fetch(JB_BASE + "/" + blobId, {headers:{'Accept':'application/json'}});
-    if(res.status===404){ setSyncStatus('offline','同步码无效或已过期'); return false; }
-    if(!res.ok) throw new Error('GET failed: '+res.status);
-    const remote = await res.json();
-    if(remote && typeof remote==='object' && remote.completion){
-      state = remote;
-      saveLocal();
-      captureOpen(); renderTimeline(); restoreOpen(); renderStats();
+  saveTimer = setTimeout(()=>{
+    if(window.storage && window.storage.set){
+      window.storage.set(STORAGE_KEY, JSON.stringify(state)).catch(()=>{});
     }
-    setSyncStatus('online','已同步');
-    return true;
-  }catch(e){
-    console.warn('拉取云端数据失败：', e);
-    setSyncStatus('offline','离线（仅本机保存，将自动重试）');
-    return false;
-  }
+  }, 200);
 }
-
-async function createCloudBlob(){
-  setSyncStatus('syncing','正在创建云端存档…');
-  try{
-    const res = await fetch(JB_BASE, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify(state)
-    });
-    if(!res.ok) throw new Error('POST failed: '+res.status);
-    const loc = res.headers.get('Location') || res.headers.get('location') || '';
-    const id = loc.split('/').filter(Boolean).pop();
-    if(!id) throw new Error('未能从响应中取得同步码');
-    blobId = id;
-    localStorage.setItem(CODE_KEY, blobId);
-    setSyncCodeDisplay(blobId);
-    setSyncStatus('online','已同步');
-    return true;
-  }catch(e){
-    console.warn('创建云端存档失败，降级为仅本机保存：', e);
-    setSyncStatus('offline','离线（仅本机保存，刷新页面可重试）');
-    return false;
-  }
-}
-
-async function switchSyncCode(newCode){
-  newCode = (newCode||'').trim();
-  if(!newCode) return;
-  const prev = blobId;
-  blobId = newCode;
-  setSyncCodeDisplay(blobId);
-  setSyncStatus('syncing','正在连接…');
-  try{
-    const res = await fetch(JB_BASE + "/" + blobId, {headers:{'Accept':'application/json'}});
-    if(res.status===404){
-      alert('没找到这个同步码对应的数据，请确认输入是否正确（注意大小写）。');
-      blobId = prev; setSyncCodeDisplay(blobId);
-      return;
-    }
-    if(!res.ok) throw new Error('GET failed: '+res.status);
-    const remote = await res.json();
-    if(remote && typeof remote==='object' && remote.completion){
-      state = remote;
-    }
-    localStorage.setItem(CODE_KEY, blobId);
-    saveLocal();
-    captureOpen(); renderTimeline(); restoreOpen(); renderStats();
-    setSyncStatus('online','已同步');
-    startPolling();
-  }catch(e){
-    console.warn('连接同步码失败：', e);
-    setSyncStatus('offline','连接失败，请检查网络后重试');
-    blobId = prev; setSyncCodeDisplay(blobId);
-  }
-}
-
-function startPolling(){
-  clearInterval(pollTimer);
-  pollTimer = setInterval(()=>{
-    // 刚编辑过的几秒内不拉取，避免覆盖还没推上去的本地改动
-    if(Date.now() - lastLocalEditAt < 4000) return;
-    if(document.visibilityState === 'visible') pullFromCloud(false);
-  }, 20000);
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState==='visible' && Date.now()-lastLocalEditAt>4000) pullFromCloud(false);
-  });
-}
-
-async function loadState(cb){
-  // 先用本机缓存渲染一次，不让用户等网络
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){ try{ state = JSON.parse(raw); }catch(e){} }
-  }catch(e){}
-  if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
-  cb();
-
-  setSyncCodeDisplay(blobId);
-
-  if(blobId){
-    const ok = await pullFromCloud(true);
-    if(ok) startPolling();
-  } else {
-    await createCloudBlob();
-    if(blobId) startPolling();
-  }
-}
-
-document.getElementById('sync-copy-btn').addEventListener('click', ()=>{
-  if(!blobId) return;
-  navigator.clipboard.writeText(blobId).then(()=>{
-    const btn = document.getElementById('sync-copy-btn');
-    const old = btn.textContent; btn.textContent = '已复制 ✓';
-    setTimeout(()=>btn.textContent=old, 1200);
-  }).catch(()=>{});
-});
-document.getElementById('sync-connect-btn').addEventListener('click', ()=>{
-  const val = document.getElementById('sync-input').value;
-  if(val && val.trim()){ switchSyncCode(val); document.getElementById('sync-input').value=''; }
-});
-document.getElementById('sync-input').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){ document.getElementById('sync-connect-btn').click(); }
-});
 
 function ensureDay(d){
   if(!state.completion[dayKey(d)]) state.completion[dayKey(d)] = {new:{}, review:{}, tasks:{}};
