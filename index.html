@@ -184,6 +184,28 @@
 
   .task-note{font-size:12.5px; color:var(--ink-dim); line-height:1.55; padding:6px 6px 2px;}
 
+  /* ===== 笔记区 ===== */
+  .note-toggle{
+    background:none; border:none; color:var(--ink-faint); font-size:12px;
+    padding:2px 6px; border-radius:4px; cursor:pointer; flex-shrink:0; line-height:1.4;
+    font-family:var(--mono);
+  }
+  .note-toggle:hover{background:rgba(255,255,255,0.06); color:var(--violet);}
+  .note-toggle.has-note{color:var(--amber);}
+  .note-area{
+    margin:4px 0 6px 28px; display:none;
+  }
+  .note-area.open{display:block;}
+  .note-textarea{
+    width:100%; background:var(--bg-raised); border:1px solid var(--line);
+    border-radius:7px; color:var(--ink); font-family:var(--mono); font-size:12px;
+    line-height:1.6; padding:8px 10px; resize:vertical; min-height:64px;
+    outline:none; transition:border-color .15s;
+  }
+  .note-textarea:focus{border-color:var(--violet);}
+  .note-textarea::placeholder{color:var(--ink-faint);}
+  .note-hint{font-size:11px; color:var(--ink-faint); margin-top:4px; padding-left:2px;}
+
   /* ===== Footer ===== */
   .footer{max-width:880px; margin:40px auto 0; padding:0 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
   .footer-text{font-size:12px; color:var(--ink-faint); line-height:1.6;}
@@ -198,6 +220,36 @@
     .continue{flex-direction:column; align-items:flex-start;}
     .day-title-sub{display:none;}
   }
+
+  /* ===== Sync bar ===== */
+  .sync-wrap{max-width:880px; margin:14px auto 0; padding:0 24px;}
+  .sync-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; font-size:12.5px;
+  }
+  .sync-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex-shrink:0;}
+  .sync-dot.online{background:var(--mint); box-shadow:0 0 6px var(--mint);}
+  .sync-dot.offline{background:var(--coral);}
+  .sync-dot.syncing{background:var(--amber); animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1} 50%{opacity:.3}}
+  .sync-status{color:var(--ink-dim); white-space:nowrap;}
+  .sync-code-display{
+    font-family:var(--mono); font-weight:700; color:var(--violet); letter-spacing:0.02em;
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:6px; padding:3px 8px;
+    font-size:11px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .sync-spacer{flex:1;}
+  .sync-action{
+    background:none; border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:6px; padding:5px 10px; font-size:12px; font-family:var(--mono);
+  }
+  .sync-action:hover{border-color:var(--violet); color:var(--violet);}
+  .sync-input{
+    background:var(--bg-raised); border:1px solid var(--line); color:var(--ink);
+    border-radius:6px; padding:5px 8px; font-family:var(--mono); font-size:11px; width:240px;
+  }
+  .sync-input:focus{outline:none; border-color:var(--violet);}
 </style>
 </head>
 <body>
@@ -224,6 +276,17 @@
       <div class="stat-num" id="stat-review" style="color:var(--coral)">0</div>
       <div class="stat-label">标记为不熟</div>
     </div>
+  </div>
+</div>
+
+<div class="sync-wrap">
+  <div class="sync-bar">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="sync-status" id="sync-status">连接中…</span>
+    <button class="sync-action" id="sync-copy-btn">导出进度（复制到另一台设备）</button>
+    <div class="sync-spacer"></div>
+    <input class="sync-input" id="sync-input" placeholder="粘贴从另一台设备导出的进度码" maxlength="100000">
+    <button class="sync-action" id="sync-connect-btn">导入</button>
   </div>
 </div>
 
@@ -322,24 +385,86 @@ let state = { completion:{}, flags:{}, startDate: null };
 
 function dayKey(d){ return "d"+d; }
 
-function loadState(cb){
-  if(window.storage && window.storage.get){
-    window.storage.get(STORAGE_KEY).then(res=>{
-      if(res && res.value){ try{ state = JSON.parse(res.value); }catch(e){} }
-      if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
-      cb();
-    }).catch(()=>{ if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); } cb(); });
-  } else { cb(); }
+/* ===================== 存储层 =====================
+   方案改为：本机自动保存（localStorage，100%可靠） + 手动导出/导入码做跨设备同步。
+   （之前试过的 jsonblob.com 因为它服务器没配置 CORS，浏览器直接拦截了请求，
+   这个问题出在对方服务器，换哪个浏览器/网络都没用，所以放弃自动方案。）
+   导出：把当前进度压缩成一段文字，复制后发到另一台设备。
+   导入：把那段文字粘贴进去，覆盖本机进度。
+====================================================== */
+function setSyncStatus(mode, text){
+  const dot = document.getElementById('sync-dot');
+  const status = document.getElementById('sync-status');
+  if(!dot || !status) return;
+  dot.className = 'sync-dot ' + mode; // online | offline | syncing
+  status.textContent = text;
 }
+
+function saveLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
 let saveTimer=null;
 function saveState(){
+  saveLocal();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{
-    if(window.storage && window.storage.set){
-      window.storage.set(STORAGE_KEY, JSON.stringify(state)).catch(()=>{});
-    }
-  }, 200);
+  setSyncStatus('syncing','保存中…');
+  saveTimer = setTimeout(()=>{ setSyncStatus('online','已保存到本机'); }, 200);
 }
+
+async function loadState(cb){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ try{ state = JSON.parse(raw); }catch(e){} }
+  }catch(e){}
+  if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
+  cb();
+  setSyncStatus('online','已保存到本机');
+}
+
+function encodeStateToCode(){
+  const json = JSON.stringify(state);
+  return btoa(unescape(encodeURIComponent(json)));
+}
+function decodeCodeToState(code){
+  const json = decodeURIComponent(escape(atob(code.trim())));
+  return JSON.parse(json);
+}
+
+document.getElementById('sync-copy-btn').addEventListener('click', ()=>{
+  const code = encodeStateToCode();
+  try{
+    navigator.clipboard.writeText(code).then(()=>{
+      const btn = document.getElementById('sync-copy-btn');
+      const old = btn.textContent; btn.textContent = '已复制 ✓ 去另一台设备粘贴';
+      setTimeout(()=>btn.textContent=old, 2000);
+    }).catch(()=>{ prompt('复制下面这段文字，到另一台设备粘贴进输入框：', code); });
+  }catch(e){
+    prompt('复制下面这段文字，到另一台设备粘贴进输入框：', code);
+  }
+});
+document.getElementById('sync-connect-btn').addEventListener('click', ()=>{
+  const val = document.getElementById('sync-input').value.trim();
+  if(!val) return;
+  try{
+    const incoming = decodeCodeToState(val);
+    if(!incoming || typeof incoming!=='object' || !incoming.completion){
+      alert('这段内容无法识别，请确认完整复制了导出码（没有多余空格或被截断）。');
+      return;
+    }
+    if(!confirm('导入会覆盖本机当前的打卡进度，确定要导入吗？')) return;
+    state = incoming;
+    saveLocal();
+    document.getElementById('sync-input').value='';
+    captureOpen(); renderTimeline(); restoreOpen(); renderStats();
+    setSyncStatus('online','导入成功，已保存到本机');
+  }catch(e){
+    alert('解析失败，这段文字可能被截断或修改过，请重新从源设备复制一遍。');
+  }
+});
+document.getElementById('sync-input').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ document.getElementById('sync-connect-btn').click(); }
+});
 
 function ensureDay(d){
   if(!state.completion[dayKey(d)]) state.completion[dayKey(d)] = {new:{}, review:{}, tasks:{}};
@@ -515,6 +640,9 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
   wrap.className = 'task' + (done?' done':'');
   const flagKey = it.name;
   const flagged = !!(state.flags && state.flags[flagKey]);
+  const noteKey = 'note__' + it.name;
+  const noteText = (state.notes && state.notes[noteKey]) || '';
+  const hasNote = noteText.trim().length > 0;
 
   wrap.innerHTML = `
     <div class="checkbox ${done?'checked':''}">${checkboxSVG()}</div>
@@ -525,13 +653,49 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
         ${it.premium? '<span class="premium-tag">需 LeetCode 会员，可用 NeetCode.io 上的版本替代</span>':''}
         ${isReview? `<span class="premium-tag" style="color:var(--amber)">来自 Day ${it.fromDay}</span>`:''}
       </div>
+      <div class="note-area ${hasNote?'open':''}">
+        <textarea class="note-textarea" placeholder="记录错误点、思路卡在哪、边界条件……">${noteText}</textarea>
+        <div class="note-hint">自动保存 · 可随时折叠</div>
+      </div>
     </div>
+    <button class="note-toggle ${hasNote?'has-note':''}" title="记录笔记">✎</button>
     <button class="flag-btn ${flagged?'flagged':''}" title="标记为不熟">⚑</button>
   `;
+
   wrap.querySelector('.checkbox').addEventListener('click', (e)=>{
     e.stopPropagation();
     onToggle();
   });
+
+  const noteToggle = wrap.querySelector('.note-toggle');
+  const noteArea = wrap.querySelector('.note-area');
+  const textarea = wrap.querySelector('.note-textarea');
+
+  noteToggle.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    noteArea.classList.toggle('open');
+    if(noteArea.classList.contains('open')) textarea.focus();
+  });
+
+  let noteTimer = null;
+  textarea.addEventListener('input', (e)=>{
+    e.stopPropagation();
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(()=>{
+      state.notes = state.notes || {};
+      const val = textarea.value;
+      if(val.trim()){
+        state.notes[noteKey] = val;
+        noteToggle.classList.add('has-note');
+      } else {
+        delete state.notes[noteKey];
+        noteToggle.classList.remove('has-note');
+      }
+      saveLocal(); // 笔记只存本机，不触发全量rerender
+    }, 400);
+  });
+  textarea.addEventListener('click', e=> e.stopPropagation());
+
   wrap.querySelector('.flag-btn').addEventListener('click', (e)=>{
     e.stopPropagation();
     state.flags = state.flags || {};
