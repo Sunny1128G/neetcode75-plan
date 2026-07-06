@@ -298,6 +298,14 @@
   .stat-num.clickable{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;}
   .stat-num.clickable:hover{opacity:0.8;}
 
+  /* ===== 错误次数按钮 ===== */
+  .error-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-faint);
+    border-radius:5px; padding:3px 7px; font-size:10.5px; font-family:var(--mono);
+    cursor:pointer; flex-shrink:0; transition:all .15s; white-space:nowrap;
+  }
+  .error-btn:hover{border-color:var(--coral); color:var(--coral);}
+
   /* ===== 弱项面板 ===== */
   .weak-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100;
@@ -1004,6 +1012,10 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
   const noteKey = 'note__' + it.name;
   const noteText = (state.notes && state.notes[noteKey]) || '';
   const hasNote = noteText.trim().length > 0;
+  const errKey = 'err__' + it.name;
+  const errCount = (state.errors && state.errors[errKey]) || 0;
+  const attemptKey = 'attempt__' + it.name;
+  const attemptCount = (state.attempts && state.attempts[attemptKey]) || 0;
 
   wrap.innerHTML = `
     <div class="checkbox ${done?'checked':''}">${checkboxSVG()}</div>
@@ -1013,19 +1025,34 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
         <span class="diff ${it.diff}">${it.diff}</span>
         ${it.premium? '<span class="premium-tag">需 LeetCode 会员，可用 NeetCode.io 上的版本替代</span>':''}
         ${isReview? `<span class="premium-tag" style="color:var(--amber)">来自 Day ${it.fromDay}</span>`:''}
+        ${attemptCount>0? `<span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint)">做了${attemptCount}次</span>`:''}
+        ${errCount>0? `<span style="font-family:var(--mono);font-size:10px;color:var(--coral);background:rgba(240,113,107,0.12);border-radius:4px;padding:1px 5px">错${errCount}次</span>`:''}
       </div>
       <div class="note-area ${hasNote?'open':''}">
         <textarea class="note-textarea" placeholder="记录错误点、思路卡在哪、边界条件……">${noteText}</textarea>
         <div class="note-hint">自动保存 · 可随时折叠</div>
       </div>
     </div>
+    <button class="error-btn" title="记录一次错误">+1错误</button>
     <button class="note-toggle ${hasNote?'has-note':''}" title="记录笔记">✎</button>
     <button class="flag-btn ${flagged?'flagged':''}" title="标记为不熟">⚑</button>
   `;
 
+  // 打勾时记录做题次数
   wrap.querySelector('.checkbox').addEventListener('click', (e)=>{
     e.stopPropagation();
+    // 每次勾选（不管勾还是取消）都记录一次尝试
+    state.attempts = state.attempts || {};
+    state.attempts[attemptKey] = (state.attempts[attemptKey]||0) + 1;
     onToggle();
+  });
+
+  // +1 错误按钮
+  wrap.querySelector('.error-btn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    state.errors = state.errors || {};
+    state.errors[errKey] = (state.errors[errKey]||0) + 1;
+    saveAndRerender();
   });
 
   const noteToggle = wrap.querySelector('.note-toggle');
@@ -1052,7 +1079,7 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
         delete state.notes[noteKey];
         noteToggle.classList.remove('has-note');
       }
-      saveLocal(); // 笔记只存本机，不触发全量rerender
+      saveLocal();
     }, 400);
   });
   textarea.addEventListener('click', e=> e.stopPropagation());
@@ -1201,6 +1228,8 @@ function renderWeakPanel(){
     if(!it) return;
     const errKey = 'err__'+name;
     const errCount = (state.errors && state.errors[errKey]) || 0;
+    const attemptKey = 'attempt__'+name;
+    const attemptCount = (state.attempts && state.attempts[attemptKey]) || 0;
 
     const item = document.createElement('div');
     item.className = 'weak-item';
@@ -1208,7 +1237,8 @@ function renderWeakPanel(){
       <span class="weak-flag">⚑</span>
       <span class="weak-name">${name}</span>
       <span class="weak-diff diff ${it.diff}">${it.diff}</span>
-      <span class="weak-err-count">${errCount>0 ? '×'+errCount : '—'}</span>
+      ${attemptCount>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">做${attemptCount}次</span>`:''}
+      <span class="weak-err-count">${errCount>0 ? '错×'+errCount : '—'}</span>
       <button class="weak-add-err">+1 错误</button>
     `;
 
