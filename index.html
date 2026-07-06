@@ -206,6 +206,150 @@
   .note-textarea::placeholder{color:var(--ink-faint);}
   .note-hint{font-size:11px; color:var(--ink-faint); margin-top:4px; padding-left:2px;}
 
+  /* ===== 进度图 ===== */
+  .chart-wrap{max-width:880px; margin:32px auto 0; padding:0 24px;}
+  .chart-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 24px 24px;
+  }
+  .chart-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap;}
+  .chart-title{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink); letter-spacing:0.04em;}
+  .chart-legend{display:flex; gap:14px; flex-wrap:wrap;}
+  .legend-item{display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--ink-dim);}
+  .legend-dot{width:8px; height:8px; border-radius:2px; flex-shrink:0;}
+  .chart-area{position:relative; width:100%;}
+  .chart-svg{width:100%; overflow:visible; display:block;}
+  .bar-new{fill:var(--mint); opacity:0.85;}
+  .bar-review{fill:var(--violet); opacity:0.75;}
+  .bar-new:hover,.bar-review:hover{opacity:1;}
+  .chart-tooltip{
+    position:absolute; background:var(--bg-raised); border:1px solid var(--line);
+    border-radius:8px; padding:8px 12px; font-size:12px; color:var(--ink);
+    pointer-events:none; white-space:nowrap; display:none; z-index:10;
+    font-family:var(--mono); box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
+  .chart-empty{text-align:center; padding:40px; color:var(--ink-faint); font-size:13px;}
+
+  /* ===== Tab 导航 ===== */
+  .tab-nav{max-width:880px; margin:24px auto 0; padding:0 24px;}
+  .tab-bar{
+    display:flex; gap:4px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    padding:4px;
+  }
+  .tab-btn{
+    flex:1; padding:9px 0; border:none; border-radius:7px; cursor:pointer;
+    font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:0.03em;
+    background:transparent; color:var(--ink-faint); transition:all .15s;
+  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{background:var(--bg-raised); color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+  .tab-btn.active.log{color:var(--mint);}
+  .tab-btn.active.chart{color:var(--violet);}
+  .tab-btn.active.weak{color:var(--coral);}
+
+  /* ===== 弱项Tab ===== */
+  .weak-wrap{max-width:880px; margin:16px auto 0; padding:0 24px;}
+  .weak-empty{
+    text-align:center; padding:48px 24px; color:var(--ink-faint); font-size:13px; line-height:1.8;
+  }
+  .weak-section{margin-bottom:28px;}
+  .weak-section-title{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:10px;
+  }
+  .weak-list{display:flex; flex-direction:column; gap:6px;}
+  .weak-item{
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:8px;
+    padding:10px 14px; cursor:pointer; transition:border-color .15s;
+  }
+  .weak-item:hover{border-color:var(--coral);}
+  .weak-flag{color:var(--coral); font-size:13px; flex-shrink:0;}
+  .weak-name{font-size:13.5px; font-weight:500; color:var(--ink); flex:1;}
+  .weak-diff{font-family:var(--mono); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600; flex-shrink:0;}
+  .weak-day{font-family:var(--mono); font-size:11px; color:var(--ink-faint); flex-shrink:0;}
+  .weak-errors{
+    font-family:var(--mono); font-size:11px; color:var(--coral);
+    background:rgba(240,113,107,0.12); border-radius:4px; padding:2px 7px; flex-shrink:0;
+  }
+
+  /* ===== 错误次数图 ===== */
+  .error-chart-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 24px 24px; margin-top:16px;
+  }
+  .error-chart-title{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink); margin-bottom:16px;}
+
+  /* ===== 错误次数按钮 ===== */
+  .error-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-faint);
+    border-radius:5px; padding:2px 7px; font-size:11px; font-family:var(--mono);
+    cursor:pointer; flex-shrink:0; line-height:1.5; transition:all .15s;
+  }
+  .error-btn:hover{border-color:var(--coral); color:var(--coral);}
+  .error-count{
+    font-family:var(--mono); font-size:11px; color:var(--coral);
+    background:rgba(240,113,107,0.12); border-radius:4px; padding:1px 6px;
+    flex-shrink:0; display:none;
+  }
+  .error-count.visible{display:inline;}
+
+  .stat-num.clickable{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;}
+  .stat-num.clickable:hover{opacity:0.8;}
+
+  /* ===== 弱项面板 ===== */
+  .weak-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100;
+    display:none; align-items:flex-start; justify-content:center; padding:40px 16px;
+    overflow-y:auto;
+  }
+  .weak-overlay.open{display:flex;}
+  .weak-panel{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:14px;
+    width:100%; max-width:620px; padding:24px; position:relative;
+    box-shadow:0 8px 40px rgba(0,0,0,0.5);
+  }
+  .weak-panel-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .weak-panel-title{font-family:var(--mono); font-size:14px; font-weight:700; color:var(--coral);}
+  .weak-close{
+    background:none; border:none; color:var(--ink-faint); font-size:20px; cursor:pointer;
+    padding:2px 8px; border-radius:6px; line-height:1;
+  }
+  .weak-close:hover{background:var(--bg-raised); color:var(--ink);}
+  .weak-list{display:flex; flex-direction:column; gap:6px; margin-bottom:24px;}
+  .weak-item{
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px;
+  }
+  .weak-flag{color:var(--coral); flex-shrink:0;}
+  .weak-name{
+    font-size:13px; font-weight:500; color:var(--violet); flex:1;
+    cursor:pointer; text-decoration:underline dotted; text-underline-offset:2px;
+  }
+  .weak-name:hover{color:var(--mint);}
+  .weak-diff{font-family:var(--mono); font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600; flex-shrink:0;}
+  .weak-err-count{
+    font-family:var(--mono); font-size:11px; color:var(--coral);
+    background:rgba(240,113,107,0.12); border-radius:4px; padding:2px 7px;
+    flex-shrink:0; min-width:28px; text-align:center;
+  }
+  .weak-add-err{
+    background:none; border:1px solid var(--line); color:var(--ink-faint);
+    border-radius:5px; padding:3px 8px; font-size:11px; font-family:var(--mono);
+    cursor:pointer; flex-shrink:0;
+  }
+  .weak-add-err:hover{border-color:var(--coral); color:var(--coral);}
+  .weak-chart-title{font-family:var(--mono); font-size:12px; color:var(--ink-dim); margin-bottom:12px;}
+  .weak-chart-area{position:relative;}
+  .weak-chart-svg{width:100%; display:block; overflow:visible;}
+  .weak-empty{text-align:center; padding:32px; color:var(--ink-faint); font-size:13px;}
+
+  /* ===== Tab 内容区 ===== */
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;}
+
   /* ===== Footer ===== */
   .footer{max-width:880px; margin:40px auto 0; padding:0 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
   .footer-text{font-size:12px; color:var(--ink-faint); line-height:1.6;}
@@ -273,8 +417,8 @@
       <div class="stat-label">连续打卡</div>
     </div>
     <div class="stat">
-      <div class="stat-num" id="stat-review" style="color:var(--coral)">0</div>
-      <div class="stat-label">标记为不熟</div>
+      <div class="stat-num clickable" id="stat-review" style="color:var(--coral)">0</div>
+      <div class="stat-label">标记为不熟（点击跳转）</div>
     </div>
   </div>
 </div>
@@ -290,18 +434,65 @@
   </div>
 </div>
 
-<div class="continue-wrap">
-  <div class="continue" id="continue-card">
-    <div class="continue-text">建议从这里继续 → <b id="continue-day-label">Day 1</b></div>
-    <button class="continue-btn" id="continue-btn">跳转并展开</button>
-  </div>
-  <div class="continue all-done" id="all-done-card" style="display:none;">
-    <div class="continue-text" style="color:var(--mint)">🎉 全部完成！可以去刷 NeetCode 150 了。</div>
+<!-- Tab 导航 -->
+<div class="tab-nav">
+  <div class="tab-bar">
+    <button class="tab-btn active log" data-tab="log">📋 打卡日志</button>
+    <button class="tab-btn chart" data-tab="chart">📈 进度图</button>
+    <button class="tab-btn weak" data-tab="weak">⚑ 弱项</button>
   </div>
 </div>
 
-<div class="timeline-wrap">
-  <div id="timeline" class="timeline"></div>
+<!-- Tab: 打卡日志 -->
+<div class="tab-pane active" id="tab-log">
+  <div class="continue-wrap">
+    <div class="continue" id="continue-card">
+      <div class="continue-text">建议从这里继续 → <b id="continue-day-label">Day 1</b></div>
+      <button class="continue-btn" id="continue-btn">跳转并展开</button>
+    </div>
+    <div class="continue all-done" id="all-done-card" style="display:none;">
+      <div class="continue-text" style="color:var(--mint)">🎉 全部完成！可以去刷 NeetCode 150 了。</div>
+    </div>
+  </div>
+
+  <div class="timeline-wrap">
+    <div id="timeline" class="timeline"></div>
+  </div>
+</div>
+
+<!-- Tab: 进度图 -->
+<div class="tab-pane" id="tab-chart">
+  <div class="chart-wrap" style="margin-top:16px;">
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">每日完成题数</span>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--mint)"></div>新题</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--violet)"></div>复习题</div>
+        </div>
+      </div>
+      <div class="chart-area">
+        <svg id="chart-svg" class="chart-svg"></svg>
+        <div class="chart-tooltip" id="chart-tooltip"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 弱项面板 -->
+<div class="weak-overlay" id="weak-overlay">
+  <div class="weak-panel">
+    <div class="weak-panel-header">
+      <span class="weak-panel-title">⚑ 标记为不熟的题目</span>
+      <button class="weak-close" id="weak-close">×</button>
+    </div>
+    <div class="weak-list" id="weak-list"></div>
+    <div class="weak-chart-title">错题次数统计</div>
+    <div class="weak-chart-area">
+      <svg id="weak-chart-svg" class="weak-chart-svg"></svg>
+      <div id="weak-chart-empty" class="weak-empty" style="display:none">还没有记录错题次数</div>
+    </div>
+  </div>
 </div>
 
 <div class="footer">
@@ -418,6 +609,40 @@ async function loadState(cb){
     if(raw){ try{ state = JSON.parse(raw); }catch(e){} }
   }catch(e){}
   if(!state.startDate){ state.startDate = new Date().toISOString().slice(0,10); }
+
+  // 一次性迁移：为已完成但没有日期记录的题目补录真实日期
+  // 用 state.datesMigrated v2 标记，强制重跑修正
+  if(state.datesMigrated !== 'v2'){
+    state.dates = state.dates || {};
+    const d1 = ensureDay(1);
+    const d2 = ensureDay(2);
+    const d3 = ensureDay(3);
+
+    // 7/1：Day 1 新题（索引 0,1,2）
+    [0,1,2].forEach(i=>{
+      if(d1.new[i]) state.dates['new__1__'+i] = '2025-07-01';
+    });
+
+    // 7/2：Day 2 新题（索引 0,1,2）
+    [0,1,2].forEach(i=>{
+      if(d2.new[i]) state.dates['new__2__'+i] = '2025-07-02';
+    });
+
+    // 7/3：Day 3 里的复习题
+    // Day 3 的间隔复习来自 Day 2（-1天）和 Day 1（不足3天所以也会出现）
+    // 你说7/3只做了Day2的复习，Day1的复习题没做，所以只处理Day2的题名
+    ['Group Anagrams','Top K Frequent Elements','Product of Array Except Self'].forEach(name=>{
+      if(d3.review && d3.review[name]) state.dates['rev__'+name] = '2025-07-03';
+    });
+    // Day 1 的题如果出现在 Day 3 复习里且已完成，也归到 7/3
+    ['Contains Duplicate','Valid Anagram','Two Sum'].forEach(name=>{
+      if(d3.review && d3.review[name]) state.dates['rev__'+name] = '2025-07-03';
+    });
+
+    state.datesMigrated = 'v2';
+    saveLocal();
+  }
+
   cb();
   setSyncStatus('online','已保存到本机');
 }
@@ -527,6 +752,7 @@ function renderStats(){
 
   let flagCount = Object.keys(state.flags||{}).filter(k=>state.flags[k]).length;
   document.getElementById('stat-review').textContent = flagCount;
+  document.getElementById('stat-review').onclick = ()=>{ if(flagCount>0) openWeakPanel(); };
 
   let nextDay = TOTAL_DAYS+1;
   for(let d=1; d<=TOTAL_DAYS; d++){ if(!isDayComplete(d)){ nextDay=d; break; } }
@@ -539,6 +765,125 @@ function renderStats(){
     document.getElementById('continue-day-label').textContent = "Day "+nextDay;
     document.getElementById('continue-btn').onclick = ()=>jumpToDay(nextDay);
   }
+  renderChart();
+}
+
+function renderChart(){
+  const svg = document.getElementById('chart-svg');
+  const tooltip = document.getElementById('chart-tooltip');
+  if(!svg) return;
+
+  // 按真实日历日期聚合完成数
+  const dates = state.dates || {};
+  const byDate = {}; // { "2025-07-01": {newDone:2, revDone:1} }
+
+  // 新题：从 state.dates['new__day__i'] 读取日期
+  PLAN.forEach(d=>{
+    const rec = ensureDay(d.day);
+    d.items.forEach((it, i)=>{
+      if(rec.new[i]){
+        const dt = dates['new__'+d.day+'__'+i] || state.startDate || new Date().toISOString().slice(0,10);
+        byDate[dt] = byDate[dt] || {newDone:0, revDone:0};
+        byDate[dt].newDone++;
+      }
+    });
+    // 复习题
+    const reviewItems = getReviewItems(d.day);
+    reviewItems.forEach(it=>{
+      if(rec.review[it.name]){
+        const dt = dates['rev__'+it.name] || state.startDate || new Date().toISOString().slice(0,10);
+        byDate[dt] = byDate[dt] || {newDone:0, revDone:0};
+        byDate[dt].revDone++;
+      }
+    });
+  });
+  // 复盘日任务
+  REVIEW_DAYS.forEach(d=>{
+    const rec = ensureDay(d.day);
+    d.tasks.forEach((t,i)=>{
+      if(rec.tasks[i]){
+        const dt = dates['task__'+d.day+'__'+i] || state.startDate || new Date().toISOString().slice(0,10);
+        byDate[dt] = byDate[dt] || {newDone:0, revDone:0};
+        byDate[dt].newDone++;
+      }
+    });
+  });
+
+  const data = Object.keys(byDate).sort().map(dt=>{
+    const [,m,day] = dt.split('-');
+    return { dt, label: `${+m}/${+day}`, newDone: byDate[dt].newDone, revDone: byDate[dt].revDone };
+  });
+
+  if(data.length===0){
+    svg.style.display='none';
+    let empty = svg.parentElement.querySelector('.chart-empty');
+    if(!empty){ empty=document.createElement('div'); empty.className='chart-empty'; empty.textContent='开始刷题后这里会出现进度图 📈'; svg.parentElement.appendChild(empty); }
+    return;
+  }
+  svg.style.display='block';
+  const existing = svg.parentElement.querySelector('.chart-empty');
+  if(existing) existing.remove();
+
+  const W = svg.parentElement.clientWidth || 800;
+  const H = 200;
+  const PL=36, PR=12, PT=12, PB=32;
+  const innerW = W - PL - PR;
+  const innerH = H - PT - PB;
+  const maxVal = Math.max(...data.map(d=>d.newDone+d.revDone), 1);
+  const barW = Math.max(4, Math.min(28, innerW/data.length*0.6));
+  const gap = innerW / data.length;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+
+  let html = '';
+
+  // Y轴网格线 + 标签
+  const ySteps = maxVal<=3?maxVal:4;
+  for(let i=0;i<=ySteps;i++){
+    const v = Math.round(maxVal/ySteps*i);
+    const y = PT + innerH - (v/maxVal)*innerH;
+    html += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#232938" stroke-width="1"/>`;
+    html += `<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="10" fill="#454e60" font-family="JetBrains Mono,monospace">${v}</text>`;
+  }
+
+  // 柱子
+  data.forEach((d,i)=>{
+    const cx = PL + gap*(i+0.5);
+    const x = cx - barW/2;
+    const newH = (d.newDone/maxVal)*innerH;
+    const revH = (d.revDone/maxVal)*innerH;
+    const totalH = ((d.newDone+d.revDone)/maxVal)*innerH;
+
+    if(d.revDone>0){
+      html += `<rect class="bar-review" x="${x}" y="${PT+innerH-revH}" width="${barW}" height="${revH}" rx="3"
+        data-dt="${d.dt}" data-label="${d.label}" data-new="${d.newDone}" data-rev="${d.revDone}"/>`;
+    }
+    if(d.newDone>0){
+      html += `<rect class="bar-new" x="${x}" y="${PT+innerH-totalH}" width="${barW}" height="${newH}" rx="3"
+        data-dt="${d.dt}" data-label="${d.label}" data-new="${d.newDone}" data-rev="${d.revDone}"/>`;
+    }
+    html += `<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="9.5" fill="#454e60" font-family="JetBrains Mono,monospace">${d.label}</text>`;
+  });
+
+  html += `<line x1="${PL}" y1="${PT+innerH}" x2="${W-PR}" y2="${PT+innerH}" stroke="#232938" stroke-width="1.5"/>`;
+
+  svg.innerHTML = html;
+
+  // tooltip
+  svg.querySelectorAll('rect').forEach(rect=>{
+    rect.addEventListener('mouseenter', e=>{
+      const nd = +rect.dataset.new, rv = +rect.dataset.rev, label = rect.dataset.label;
+      tooltip.innerHTML = `<b>${label}</b><br>新题 ${nd} 道 · 复习 ${rv} 道 · 合计 ${nd+rv} 道`;
+      tooltip.style.display='block';
+    });
+    rect.addEventListener('mousemove', e=>{
+      const box = svg.parentElement.getBoundingClientRect();
+      tooltip.style.left = (e.clientX - box.left + 10)+'px';
+      tooltip.style.top = (e.clientY - box.top - 36)+'px';
+    });
+    rect.addEventListener('mouseleave', ()=>{ tooltip.style.display='none'; });
+  });
 }
 
 function jumpToDay(d){
@@ -610,7 +955,15 @@ function renderPlanDay(d){
   const newList = row.querySelector('.task-list-new');
   d.items.forEach((it, i)=>{
     newList.appendChild(renderTask(it, !!rec.new[i], ()=>{
-      rec.new[i] = !rec.new[i];
+      const today = new Date().toISOString().slice(0,10);
+      if(!rec.new[i]){
+        rec.new[i] = true;
+        state.dates = state.dates || {};
+        state.dates['new__'+d.day+'__'+i] = today;
+      } else {
+        rec.new[i] = false;
+        if(state.dates) delete state.dates['new__'+d.day+'__'+i];
+      }
       saveAndRerender();
     }, d.day, 'new-'+i));
   });
@@ -620,7 +973,15 @@ function renderPlanDay(d){
     reviewItems.forEach(it=>{
       const wrap = document.createElement('div');
       wrap.appendChild(renderTask(it, !!rec.review[it.name], ()=>{
-        rec.review[it.name] = !rec.review[it.name];
+        const today = new Date().toISOString().slice(0,10);
+        if(!rec.review[it.name]){
+          rec.review[it.name] = true;
+          state.dates = state.dates || {};
+          state.dates['rev__'+it.name] = today;
+        } else {
+          rec.review[it.name] = false;
+          if(state.dates) delete state.dates['rev__'+it.name];
+        }
         saveAndRerender();
       }, d.day, 'rev-'+it.name, true));
       revList.appendChild(wrap);
@@ -745,7 +1106,15 @@ function renderReviewDay(d){
     `;
     wrap.querySelector('.checkbox').addEventListener('click', (e)=>{
       e.stopPropagation();
-      rec.tasks[i] = !rec.tasks[i];
+      const today = new Date().toISOString().slice(0,10);
+      if(!rec.tasks[i]){
+        rec.tasks[i] = true;
+        state.dates = state.dates || {};
+        state.dates['task__'+d.day+'__'+i] = today;
+      } else {
+        rec.tasks[i] = false;
+        if(state.dates) delete state.dates['task__'+d.day+'__'+i];
+      }
       saveAndRerender();
     });
     list.appendChild(wrap);
@@ -789,9 +1158,176 @@ document.getElementById('reset-btn').addEventListener('click', ()=>{
   }
 });
 
+/* ===== 弱项面板 ===== */
+function openWeakPanel(){
+  const overlay = document.getElementById('weak-overlay');
+  overlay.classList.add('open');
+  renderWeakPanel();
+}
+function closeWeakPanel(){
+  const overlay = document.getElementById('weak-overlay');
+  if(overlay) overlay.classList.remove('open');
+}
+function initWeakPanel(){
+  const closeBtn = document.getElementById('weak-close');
+  const overlay = document.getElementById('weak-overlay');
+  if(closeBtn) closeBtn.addEventListener('click', closeWeakPanel);
+  if(overlay) overlay.addEventListener('click', e=>{ if(e.target===overlay) closeWeakPanel(); });
+}
+
+function renderWeakPanel(){
+  const flaggedNames = Object.keys(state.flags||{}).filter(k=>state.flags[k]);
+  const list = document.getElementById('weak-list');
+  list.innerHTML = '';
+
+  if(flaggedNames.length===0){
+    list.innerHTML = '<div class="weak-empty">还没有标记不熟的题目</div>';
+    return;
+  }
+
+  // 找每道题属于哪个 Day
+  const nameToDay = {};
+  const nameToMeta = {};
+  PLAN.forEach(d=>{
+    d.items.forEach(it=>{
+      nameToDay[it.name] = d.day;
+      nameToMeta[it.name] = it;
+    });
+  });
+
+  flaggedNames.forEach(name=>{
+    const it = nameToMeta[name];
+    const day = nameToDay[name];
+    if(!it) return;
+    const errKey = 'err__'+name;
+    const errCount = (state.errors && state.errors[errKey]) || 0;
+
+    const item = document.createElement('div');
+    item.className = 'weak-item';
+    item.innerHTML = `
+      <span class="weak-flag">⚑</span>
+      <span class="weak-name">${name}</span>
+      <span class="weak-diff diff ${it.diff}">${it.diff}</span>
+      <span class="weak-err-count">${errCount>0 ? '×'+errCount : '—'}</span>
+      <button class="weak-add-err">+1 错误</button>
+    `;
+
+    // 点题名跳转
+    item.querySelector('.weak-name').addEventListener('click', ()=>{
+      closeWeakPanel();
+      // 切回打卡日志Tab
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="log"]').classList.add('active');
+      document.getElementById('tab-log').classList.add('active');
+      setTimeout(()=>{
+        const row = document.getElementById('row-'+day);
+        if(row){
+          row.classList.add('open');
+          // 找到具体题目的 task-link 并滚动到它
+          const links = row.querySelectorAll('.task-link');
+          for(const link of links){
+            if(link.textContent.trim()===name){
+              link.scrollIntoView({behavior:'smooth', block:'center'});
+              // 短暂高亮
+              const taskEl = link.closest('.task');
+              if(taskEl){
+                taskEl.style.background='rgba(110,231,183,0.1)';
+                setTimeout(()=>taskEl.style.background='', 1500);
+              }
+              break;
+            }
+          }
+        }
+      }, 80);
+    });
+
+    // +1 错误次数
+    item.querySelector('.weak-add-err').addEventListener('click', ()=>{
+      state.errors = state.errors || {};
+      state.errors[errKey] = (state.errors[errKey]||0) + 1;
+      saveLocal();
+      renderWeakPanel(); // 刷新面板
+      renderStats();
+    });
+
+    list.appendChild(item);
+  });
+
+  renderWeakChart(flaggedNames, nameToMeta);
+}
+
+function renderWeakChart(flaggedNames, nameToMeta){
+  const svg = document.getElementById('weak-chart-svg');
+  const empty = document.getElementById('weak-chart-empty');
+  if(!svg) return;
+
+  const data = flaggedNames
+    .map(name=>({
+      name,
+      short: name.length>20 ? name.slice(0,18)+'…' : name,
+      count: (state.errors && state.errors['err__'+name]) || 0,
+      diff: (nameToMeta[name]||{}).diff || 'Medium'
+    }))
+    .filter(d=>d.count>0)
+    .sort((a,b)=>b.count-a.count);
+
+  if(data.length===0){
+    svg.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  svg.style.display='block';
+  empty.style.display='none';
+
+  const W = svg.parentElement.clientWidth || 560;
+  const barH = 22;
+  const gap = 8;
+  const PL = 160;
+  const PR = 40;
+  const PT = 8;
+  const H = PT + data.length*(barH+gap);
+  const maxVal = Math.max(...data.map(d=>d.count), 1);
+  const innerW = W - PL - PR;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+
+  const DIFF_COLOR = {Easy:'#6ee7b7', Medium:'#f5b461', Hard:'#f0716b'};
+
+  let html = '';
+  data.forEach((d,i)=>{
+    const y = PT + i*(barH+gap);
+    const barW = Math.max(4, (d.count/maxVal)*innerW);
+    const color = DIFF_COLOR[d.diff]||'#f0716b';
+
+    // 题名标签
+    html += `<text x="${PL-8}" y="${y+barH/2+4}" text-anchor="end" font-size="11" fill="#6f7a8e" font-family="Inter,sans-serif">${d.short}</text>`;
+    // 柱子
+    html += `<rect x="${PL}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${color}" opacity="0.85"/>`;
+    // 次数标签
+    html += `<text x="${PL+barW+6}" y="${y+barH/2+4}" font-size="11" fill="${color}" font-family="JetBrains Mono,monospace" font-weight="700">×${d.count}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// Tab 切换
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+tab).classList.add('active');
+    if(tab==='chart') renderChart();
+  });
+});
+
 loadState(()=>{
   renderTimeline();
   renderStats();
+  initWeakPanel();
 });
 </script>
 </body>
