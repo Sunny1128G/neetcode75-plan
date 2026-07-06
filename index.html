@@ -1087,7 +1087,13 @@ function renderTask(it, done, onToggle, day, keyId, isReview){
   wrap.querySelector('.flag-btn').addEventListener('click', (e)=>{
     e.stopPropagation();
     state.flags = state.flags || {};
-    state.flags[flagKey] = !state.flags[flagKey];
+    const nowFlagged = !state.flags[flagKey];
+    state.flags[flagKey] = nowFlagged;
+    // 记录历史：不熟次数 / 熟悉次数
+    state.history = state.history || {};
+    state.history[flagKey] = state.history[flagKey] || {bad:0, good:0};
+    if(nowFlagged) state.history[flagKey].bad++;
+    else state.history[flagKey].good++;
     saveAndRerender();
   });
   return wrap;
@@ -1226,10 +1232,8 @@ function renderWeakPanel(){
     const it = nameToMeta[name];
     const day = nameToDay[name];
     if(!it) return;
-    const errKey = 'err__'+name;
-    const errCount = (state.errors && state.errors[errKey]) || 0;
-    const attemptKey = 'attempt__'+name;
-    const attemptCount = (state.attempts && state.attempts[attemptKey]) || 0;
+    const hist = (state.history && state.history[name]) || {bad:0, good:0};
+    const total = hist.bad + hist.good;
 
     const item = document.createElement('div');
     item.className = 'weak-item';
@@ -1237,9 +1241,9 @@ function renderWeakPanel(){
       <span class="weak-flag">⚑</span>
       <span class="weak-name">${name}</span>
       <span class="weak-diff diff ${it.diff}">${it.diff}</span>
-      ${attemptCount>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">做${attemptCount}次</span>`:''}
-      <span class="weak-err-count">${errCount>0 ? '错×'+errCount : '—'}</span>
-      <button class="weak-add-err">+1 错误</button>
+      ${total>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">共${total}次</span>`:''}
+      ${hist.bad>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--coral);background:rgba(240,113,107,0.12);border-radius:4px;padding:2px 6px">不熟×${hist.bad}</span>`:''}
+      ${hist.good>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--mint);background:rgba(110,231,183,0.1);border-radius:4px;padding:2px 6px">熟悉×${hist.good}</span>`:''}
     `;
 
     // 点题名跳转
@@ -1272,15 +1276,6 @@ function renderWeakPanel(){
       }, 80);
     });
 
-    // +1 错误次数
-    item.querySelector('.weak-add-err').addEventListener('click', ()=>{
-      state.errors = state.errors || {};
-      state.errors[errKey] = (state.errors[errKey]||0) + 1;
-      saveLocal();
-      renderWeakPanel(); // 刷新面板
-      renderStats();
-    });
-
     list.appendChild(item);
   });
 
@@ -1296,11 +1291,12 @@ function renderWeakChart(flaggedNames, nameToMeta){
     .map(name=>({
       name,
       short: name.length>20 ? name.slice(0,18)+'…' : name,
-      count: (state.errors && state.errors['err__'+name]) || 0,
+      bad: (state.history && state.history[name] && state.history[name].bad) || 0,
+      good: (state.history && state.history[name] && state.history[name].good) || 0,
       diff: (nameToMeta[name]||{}).diff || 'Medium'
     }))
-    .filter(d=>d.count>0)
-    .sort((a,b)=>b.count-a.count);
+    .filter(d=>d.bad+d.good>0)
+    .sort((a,b)=>b.bad-a.bad);
 
   if(data.length===0){
     svg.style.display='none';
@@ -1317,28 +1313,35 @@ function renderWeakChart(flaggedNames, nameToMeta){
   const PR = 40;
   const PT = 8;
   const H = PT + data.length*(barH+gap);
-  const maxVal = Math.max(...data.map(d=>d.count), 1);
+  const maxVal = Math.max(...data.map(d=>d.bad+d.good), 1);
   const innerW = W - PL - PR;
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('height', H);
 
-  const DIFF_COLOR = {Easy:'#6ee7b7', Medium:'#f5b461', Hard:'#f0716b'};
-
   let html = '';
   data.forEach((d,i)=>{
     const y = PT + i*(barH+gap);
-    const barW = Math.max(4, (d.count/maxVal)*innerW);
-    const color = DIFF_COLOR[d.diff]||'#f0716b';
+    const totalW = Math.max(4, ((d.bad+d.good)/maxVal)*innerW);
+    const badW = Math.round((d.bad/(d.bad+d.good))*totalW);
+    const goodW = totalW - badW;
 
     // 题名标签
     html += `<text x="${PL-8}" y="${y+barH/2+4}" text-anchor="end" font-size="11" fill="#6f7a8e" font-family="Inter,sans-serif">${d.short}</text>`;
-    // 柱子
-    html += `<rect x="${PL}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${color}" opacity="0.85"/>`;
-    // 次数标签
-    html += `<text x="${PL+barW+6}" y="${y+barH/2+4}" font-size="11" fill="${color}" font-family="JetBrains Mono,monospace" font-weight="700">×${d.count}</text>`;
+    // 不熟部分（红）
+    if(badW>0) html += `<rect x="${PL}" y="${y}" width="${badW}" height="${barH}" rx="4" fill="#f0716b" opacity="0.85"/>`;
+    // 熟悉部分（绿）
+    if(goodW>0) html += `<rect x="${PL+badW}" y="${y}" width="${goodW}" height="${barH}" rx="4" fill="#6ee7b7" opacity="0.75"/>`;
+    // 标签
+    html += `<text x="${PL+totalW+6}" y="${y+barH/2+4}" font-size="11" fill="#6f7a8e" font-family="JetBrains Mono,monospace">不熟${d.bad} / 熟悉${d.good}</text>`;
   });
 
+  // 图例
+  html += `<text x="${PL}" y="${H}" font-size="10" fill="#f0716b" font-family="Inter,sans-serif">■ 不熟</text>`;
+  html += `<text x="${PL+40}" y="${H}" font-size="10" fill="#6ee7b7" font-family="Inter,sans-serif">■ 熟悉</text>`;
+
+  svg.setAttribute('height', H+14);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H+14}`);
   svg.innerHTML = html;
 }
 
